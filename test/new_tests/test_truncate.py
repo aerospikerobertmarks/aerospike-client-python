@@ -176,6 +176,7 @@ class TestTruncate(object):
     def test_nanos_argument_too_large(self):
         with pytest.raises(OverflowError):
             self.as_connection.truncate("test", "truncate", 2 ** 64)
+
     # What should this raise?
     def test_nanos_argument_negative(self):
         with pytest.raises(ValueError):
