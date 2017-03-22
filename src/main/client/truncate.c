@@ -81,7 +81,7 @@ AerospikeClient_Truncate(AerospikeClient * self, PyObject * args, PyObject * kwd
 	if (PyString_Check(py_ns)) {
 		namespace = strdup(PyString_AsString(py_ns));
 	} else if (PyUnicode_Check(py_ns)) {
-		py_ns = PyUnicode_AsUTF8String(py_ns);
+		py_ustr = PyUnicode_AsUTF8String(py_ns);
 		namespace = strdup(PyBytes_AsString(py_ustr));
 		Py_DECREF(py_ustr);
 	} else {
@@ -94,7 +94,7 @@ AerospikeClient_Truncate(AerospikeClient * self, PyObject * args, PyObject * kwd
 	if (PyString_Check(py_set)) {
 		set = strdup(PyString_AsString(py_set));
 	} else if (PyUnicode_Check(py_set)) {
-		py_set = PyUnicode_AsUTF8String(py_set);
+		py_ustr = PyUnicode_AsUTF8String(py_set);
 		set = strdup(PyBytes_AsString(py_ustr));
 		Py_DECREF(py_ustr);
 	} else {
@@ -112,7 +112,7 @@ AerospikeClient_Truncate(AerospikeClient * self, PyObject * args, PyObject * kwd
 			if (PyErr_Occurred()) {
 	   			PyErr_SetString(PyExc_OverflowError, "Nanoseconds value out of range for long");
 			} else {
-	   			PyErr_SetString(PyExc_TypeError, "Nanoseconds must be a positive value");
+	   			PyErr_SetString(PyExc_ValueError, "Nanoseconds must be a positive value");
 	   		}
 			goto CLEANUP;
 		}
@@ -126,12 +126,13 @@ AerospikeClient_Truncate(AerospikeClient * self, PyObject * args, PyObject * kwd
 		long tempInt;
 		tempInt = PyInt_AsLong(py_nanos);
 		if (tempInt == -1 && PyErr_Occurred()) {
+	   		PyErr_SetString(PyExc_OverflowError, "Nanoseconds value out of range for long");
 			err_occurred = true;
 			goto CLEANUP;
 		}
 		if (tempInt < 0) {
 			err_occurred = true;
-	   		PyErr_SetString(PyExc_TypeError, "Nanoseconds value must be a positive value");
+	   		PyErr_SetString(PyExc_ValueError, "Nanoseconds value must be a positive value");
 			goto CLEANUP;
 		}
 		nanos = (uint64_t)tempInt;
