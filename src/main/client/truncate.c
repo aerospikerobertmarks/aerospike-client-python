@@ -63,6 +63,7 @@ AerospikeClient_Truncate(AerospikeClient * self, PyObject * args, PyObject * kwd
 	PyObject* py_policy = NULL;
 	PyObject* py_ustr = NULL;
 	bool err_occurred = false;
+	long long temp_long;
 	as_error err;
 	uint64_t nanos;
 	char* namespace = NULL;
@@ -103,7 +104,25 @@ AerospikeClient_Truncate(AerospikeClient * self, PyObject * args, PyObject * kwd
 		goto CLEANUP;
 	}
 
-	if PyInt_Check(py_nanos) {
+	if PyLong_Check(py_nanos) {
+
+		temp_long = PyLong_AsLongLong(py_nanos);
+		if (temp_long < 0) {
+			err_occurred = true;
+			if (PyErr_Occurred()) {
+	   			PyErr_SetString(PyExc_OverflowError, "Nanoseconds value out of range for long");
+			} else {
+	   			PyErr_SetString(PyExc_TypeError, "Nanoseconds must be a positive value");
+	   		}
+			goto CLEANUP;
+		}
+		nanos = PyLong_AsUnsignedLong(py_nanos);
+		if (PyErr_Occurred()) {
+			PyErr_SetString(PyExc_OverflowError, "Nanoseconds value too large");
+			err_occurred = true;
+			goto CLEANUP;
+		}
+	} else if PyInt_Check(py_nanos) {
 		long tempInt;
 		tempInt = PyInt_AsLong(py_nanos);
 		if (tempInt == -1 && PyErr_Occurred()) {
@@ -112,15 +131,10 @@ AerospikeClient_Truncate(AerospikeClient * self, PyObject * args, PyObject * kwd
 		}
 		if (tempInt < 0) {
 			err_occurred = true;
-	   		PyErr_SetString(PyExc_TypeError, "Nanoseconds must be a positive value");
+	   		PyErr_SetString(PyExc_TypeError, "Nanoseconds value must be a positive value");
 			goto CLEANUP;
 		}
 		nanos = (uint64_t)tempInt;
-	} else if PyLong_Check(py_nanos) {
-		nanos = PyLong_AsUnsignedLong(py_nanos);
-		if (PyErr_Occurred()) {
-	   		PyErr_SetString(PyExc_TypeError, "Nanoseconds value too large");
-		}
 	} else {
 		err_occurred = true;
    		PyErr_SetString(PyExc_TypeError, "Nanoseconds must be a long type");
