@@ -119,7 +119,7 @@ class TestTruncate(object):
             (u'test', u'truncate')
         )
     )
-    def test_whole_set_truncation(self, namespace, test_set):
+    def test_whole_set_unicode_truncation(self, namespace, test_set):
         self.as_connection.truncate(namespace, test_set, 0)
 
         for key in self.truncated_keys:
