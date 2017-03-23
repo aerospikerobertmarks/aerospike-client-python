@@ -103,7 +103,6 @@ class TestTruncate(object):
             _, meta = self.as_connection.exists(key)
             assert meta is not None
 
-    @pytest.mark.xfail(5 == 6, reason="Test")
     def test_truncate_with_lut_before_all_records(self):
         before_lut = self.truncate_threshold - 10 ** 11
         self.as_connection.truncate("test", "truncate", before_lut)
@@ -188,3 +187,15 @@ class TestTruncate(object):
         with pytest.raises(e.ServerError):
             self.as_connection.truncate(
                 "test", "truncate", future_time)
+
+    def test_no_nanos_arg(self):
+        with pytest.raises(TypeError):
+            self.as_connection.truncate("test", "truncate")
+
+    def test_only_set_arg(self):
+        with pytest.raises(TypeError):
+            self.as_connection.truncate("test")
+
+    def test_truncate_with_no_args(self):
+        with pytest.raises(TypeError):
+            self.as_connection.truncate()
