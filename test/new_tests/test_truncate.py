@@ -199,3 +199,22 @@ class TestTruncate(object):
     def test_truncate_with_no_args(self):
         with pytest.raises(TypeError):
             self.as_connection.truncate()
+
+    def test_whole_set_truncation_with_invalid_policy(self):
+        policy = {'timeout': 0.5}
+        with pytest.raises(e.ClientError):
+            self.as_connection.truncate("test", "truncate", 0, policy)
+
+    @pytest.mark.parametrize(
+        "policy",
+        (
+            "timeout",
+            5,
+            False,
+            [],
+            ()
+        )
+    )
+    def test_whole_set_truncation_with_invalid_policy_type(self, policy):
+        with pytest.raises(e.ClientError):
+            self.as_connection.truncate("test", "truncate", 0, policy)
