@@ -37,8 +37,10 @@ class TestTruncate(object):
             as_connection.put(key, rec)
             self.keys.append(key)
             self.un_truncated_keys.append(key)
-
+        # Give some time for time differences to resolve themselves
+        time.sleep(.25)
         self.truncate_threshold = int(time.time()) * 10 ** 9
+        
 
         def teardown():
             """
@@ -52,35 +54,48 @@ class TestTruncate(object):
 
         request.addfinalizer(teardown)
 
+    def _assert_truncation_status(self, keys, exists=False):
+        # Give the server some time to finish the call
+        time.sleep(.1)
+        for key in keys:
+            _, meta = self.as_connection.exists(key)
+            if exists:
+                assert meta is not None
+            else:
+                assert meta is None
+
     def test_whole_set_truncation(self):
         self.as_connection.truncate("test", "truncate", 0)
 
-        for key in self.truncated_keys:
-            _, meta = self.as_connection.exists(key)
-            assert meta is None
+        self._assert_truncation_status(self.truncated_keys, exists=False)
 
-    def test_truncate_does_not_change_entire_set(self):
+    def test_truncate_does_not_change_entire_namespace(self):
         self.as_connection.truncate("test", "truncate", 0)
 
-        for key in self.un_truncated_keys:
-            _, meta = self.as_connection.exists(key)
-            assert meta is not None
+        self._assert_truncation_status(self.un_truncated_keys, exists=True)
+
+    def test_truncate_entire_namespace(self):
+        '''
+        Verify that passing None as the set will
+        truncate the entire namespace
+        '''
+        self.as_connection.truncate("test", None, 0)
+#
+        self._assert_truncation_status(self.truncated_keys, exists=False)
+        self._assert_truncation_status(self.un_truncated_keys, exists=False)
 
     def test_whole_set_truncation_with_policy(self):
         policy = {'timeout': 1000}
         self.as_connection.truncate("test", "truncate", 0, policy)
 
-        for key in self.truncated_keys:
-            _, meta = self.as_connection.exists(key)
-            assert meta is None
+        self._assert_truncation_status(self.truncated_keys, exists=False)
+
 
     def test_whole_set_truncation_with_none_policy(self):
         policy = None
         self.as_connection.truncate("test", "truncate", 0, policy)
 
-        for key in self.truncated_keys:
-            _, meta = self.as_connection.exists(key)
-            assert meta is None
+        self._assert_truncation_status(self.truncated_keys, exists=False)
 
     def test_whole_set_truncation_with_created_threshold(self):
         time.sleep(5)
@@ -95,13 +110,10 @@ class TestTruncate(object):
 
         self.as_connection.truncate("test", "truncate", threshold)
 
-        for key in self.truncated_keys[:45]:
-            _, meta = self.as_connection.exists(key)
-            assert meta is None
+        self._assert_truncation_status(self.truncated_keys[:45], exists=False)
 
-        for key in self.truncated_keys[45:]:
-            _, meta = self.as_connection.exists(key)
-            assert meta is not None
+        # Items created after the LUT should still exist
+        self._assert_truncation_status(self.truncated_keys[45:], exists=True)
 
     def test_truncate_with_lut_before_all_records(self):
         before_lut = self.truncate_threshold - 10 ** 11
@@ -150,7 +162,7 @@ class TestTruncate(object):
     @pytest.mark.parametrize(
         "invalid_set",
         (
-            1, .5, None, False, {}, (), []
+            1, .5, False, {}, (), []
         )
     )
     def test_invalid_set_argument_to_truncate(self, invalid_set):

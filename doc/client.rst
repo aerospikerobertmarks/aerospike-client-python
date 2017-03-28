@@ -2191,6 +2191,16 @@ a cluster-tending thread.
 
         .. versionadded:: 1.0.56
 
+    .. method:: truncate(namespace, set, nanos[, policy])
+        ..versionadded:: 2.11
+
+        Truncate a set. This operation truncates all records contained in the set with a last update time less than the *nanos* argument
+        :param str namespace: the namespace to truncate.
+        :param str set: the set to truncate
+        :param long nanos: A value in nanoseconds since the linux epoch indicating that all records last updated before this time should be truncated. A value of ``0`` indicates that all records in the set should be truncated regardless of update time. The value must not be in the future.
+        :param dict policy: optional :ref:`aerospike_info_policies`
+        :rtype: Status indicating the success of the operation.
+
 
     .. rubric:: LList
 

@@ -97,10 +97,10 @@ AerospikeClient_Truncate(AerospikeClient * self, PyObject * args, PyObject * kwd
 		py_ustr = PyUnicode_AsUTF8String(py_set);
 		set = strdup(PyBytes_AsString(py_ustr));
 		Py_DECREF(py_ustr);
-	} else {
-		// Do param error here
+	} else if (py_set != Py_None) {
+		// If the set is none, this is fine
 		err_occurred = true;
-   		PyErr_SetString(PyExc_TypeError, "Set must be unicode or string type");
+		PyErr_SetString(PyExc_TypeError, "Set must be None, or unicode or string type");
 		goto CLEANUP;
 	}
 
