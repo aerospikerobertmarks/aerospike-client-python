@@ -19,6 +19,7 @@
 #include <aerospike/aerospike.h>
 #include <aerospike/as_error.h>
 #include <aerospike/as_node.h>
+#include <aerospike/as_cluster.h>
 
 #include "client.h"
 #include "conversions.h"
@@ -58,6 +59,10 @@ PyObject * AerospikeClient_Connect(AerospikeClient * self, PyObject * args, PyOb
 	if (py_username && PyString_Check(py_username) && py_password && PyString_Check(py_password)) {
 		username = PyString_AsString(py_username);
 		password = PyString_AsString(py_password);
+		if (!as_config_set_user(&self->as->config, username, password)) {
+			as_error_update(&err, AEROSPIKE_ERR_PARAM, "Invalid Username or password");
+			goto CLEANUP;
+		}
 		using_auth = true;
 	}
 
@@ -82,11 +87,11 @@ PyObject * AerospikeClient_Connect(AerospikeClient * self, PyObject * args, PyOb
 					goto CLEANUP;
 				}
 
-				if (!as_config_set_user(as->config, username, password)) {
+				if (!as_config_set_user(&as->config, username, password)) {
 					as_error_update(&err, AEROSPIKE_ERR_PARAM, "Invalid Username or password");
 					goto CLEANUP;
 				} else {
-					as_cluster_change_password(as->cluster, username, as->config->password);
+					as_cluster_change_password(as->cluster, username, self->as->config.password);
 				}
 		}
 		if (as != self->as) {
@@ -112,12 +117,6 @@ PyObject * AerospikeClient_Connect(AerospikeClient * self, PyObject * args, PyOb
 		goto CLEANUP;
 	}
 
-	if (using_auth) {
-		if (!as_config_set_user(&self->as->config, username, password)) {
-			as_error_update(&err, AEROSPIKE_ERR_PARAM, "Invalid Username or password");
-			goto CLEANUP;
-		}
-	}
 	//Generate unique shm_key
 	PyObject *py_key, *py_value;
 	Py_ssize_t pos = 0;
