@@ -18,6 +18,7 @@
 
 #include <aerospike/aerospike.h>
 #include <aerospike/as_error.h>
+#include <aerospike/as_node.h>
 
 #include "client.h"
 #include "conversions.h"
@@ -44,18 +45,20 @@ PyObject * AerospikeClient_Connect(AerospikeClient * self, PyObject * args, PyOb
 	as_error err;
 	as_error_init(&err);
 	char *alias_to_search = NULL;
-
+	bool using_auth = false;
 	PyObject * py_username = NULL;
 	PyObject * py_password = NULL;
+	char * username = NULL;
+	char * password = NULL;
 
 	if (PyArg_ParseTuple(args, "|OO:connect", &py_username, &py_password) == false) {
 		return NULL;
 	}
 
 	if (py_username && PyString_Check(py_username) && py_password && PyString_Check(py_password)) {
-		char * username = PyString_AsString(py_username);
-		char * password = PyString_AsString(py_password);
-		as_config_set_user(&self->as->config, username, password);
+		username = PyString_AsString(py_username);
+		password = PyString_AsString(py_password);
+		using_auth = true;
 	}
 
 	if (!self || !self->as || !self->as->config.hosts || !self->as->config.hosts->size) {
@@ -70,6 +73,22 @@ PyObject * AerospikeClient_Connect(AerospikeClient * self, PyObject * args, PyOb
 		aerospike *as = ((AerospikeGlobalHosts*)py_persistent_item)->as;
 		//Destroy the initial aerospike object as it has to point to the one in
 		//the persistent list now
+
+		if (using_auth) {
+				as_status auth_status;
+				auth_status = as_node_authenticate_connection(as->cluster, username, password);
+				if (auth_status != AEROSPIKE_OK) {
+					as_error_update(&err, auth_status, "Authentication Failed");
+					goto CLEANUP;
+				}
+
+				if (!as_config_set_user(as->config, username, password)) {
+					as_error_update(&err, AEROSPIKE_ERR_PARAM, "Invalid Username or password");
+					goto CLEANUP;
+				} else {
+					as_cluster_change_password(as->cluster, username, as->config->password);
+				}
+		}
 		if (as != self->as) {
 			// If the client has previously connected
 			// Other clients may share its aerospike* pointer
@@ -91,6 +110,13 @@ PyObject * AerospikeClient_Connect(AerospikeClient * self, PyObject * args, PyOb
 			}
 		}
 		goto CLEANUP;
+	}
+
+	if (using_auth) {
+		if (!as_config_set_user(&self->as->config, username, password)) {
+			as_error_update(&err, AEROSPIKE_ERR_PARAM, "Invalid Username or password");
+			goto CLEANUP;
+		}
 	}
 	//Generate unique shm_key
 	PyObject *py_key, *py_value;
