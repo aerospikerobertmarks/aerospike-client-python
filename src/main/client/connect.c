@@ -73,48 +73,51 @@ PyObject * AerospikeClient_Connect(AerospikeClient * self, PyObject * args, PyOb
 
 	alias_to_search = return_search_string(self->as);
 
-	PyObject * py_persistent_item = PyDict_GetItemString(py_global_hosts, alias_to_search);
-	if (py_persistent_item) {
-		aerospike *as = ((AerospikeGlobalHosts*)py_persistent_item)->as;
-		//Destroy the initial aerospike object as it has to point to the one in
-		//the persistent list now
+	if (self->use_shared_connection) {
 
-		if (using_auth) {
-				as_status auth_status;
-				auth_status = as_node_authenticate_connection(as->cluster, username, password);
-				if (auth_status != AEROSPIKE_OK) {
-					as_error_update(&err, auth_status, "Authentication Failed");
-					goto CLEANUP;
-				}
+		PyObject * py_persistent_item = PyDict_GetItemString(py_global_hosts, alias_to_search);
+		if (py_persistent_item) {
+			aerospike *as = ((AerospikeGlobalHosts*)py_persistent_item)->as;
+			//Destroy the initial aerospike object as it has to point to the one in
+			//the persistent list now
 
-				if (!as_config_set_user(&as->config, username, password)) {
-					as_error_update(&err, AEROSPIKE_ERR_PARAM, "Invalid Username or password");
-					goto CLEANUP;
-				} else {
-					as_cluster_change_password(as->cluster, username, self->as->config.password);
-				}
-		}
-		if (as != self->as) {
-			// If the client has previously connected
-			// Other clients may share its aerospike* pointer
-			// So it is not safe to destroy it
-			if (!self->has_connected) {
-				aerospike_destroy(self->as);
+			if (using_auth) {
+					as_status auth_status;
+					auth_status = as_node_authenticate_connection(as->cluster, username, password);
+					if (auth_status != AEROSPIKE_OK) {
+						as_error_update(&err, auth_status, "Authentication Failed");
+						goto CLEANUP;
+					}
+
+					if (!as_config_set_user(&as->config, username, password)) {
+						as_error_update(&err, AEROSPIKE_ERR_PARAM, "Invalid Username or password");
+						goto CLEANUP;
+					} else {
+						as_cluster_change_password(as->cluster, username, self->as->config.password);
+					}
 			}
-			self->as = as;
-			self->as->config.shm_key = ((AerospikeGlobalHosts*)py_persistent_item)->shm_key;
+			if (as != self->as) {
+				// If the client has previously connected
+				// Other clients may share its aerospike* pointer
+				// So it is not safe to destroy it
+				if (!self->has_connected) {
+					aerospike_destroy(self->as);
+				}
+				self->as = as;
+				self->as->config.shm_key = ((AerospikeGlobalHosts*)py_persistent_item)->shm_key;
 
-			//Increase ref count of global host entry
-			((AerospikeGlobalHosts*)py_persistent_item)->ref_cnt++;
-		} else {
-			// If there is a matching global host entry,
-			// and this client was disconnected, increment the ref_cnt of the global.
-			// If the client is already connected, do nothing.
-			if(!self->is_conn_16) {
+				//Increase ref count of global host entry
 				((AerospikeGlobalHosts*)py_persistent_item)->ref_cnt++;
+			} else {
+				// If there is a matching global host entry,
+				// and this client was disconnected, increment the ref_cnt of the global.
+				// If the client is already connected, do nothing.
+				if(!self->is_conn_16) {
+					((AerospikeGlobalHosts*)py_persistent_item)->ref_cnt++;
+				}
 			}
+			goto CLEANUP;
 		}
-		goto CLEANUP;
 	}
 
 	//Generate unique shm_key
@@ -152,8 +155,11 @@ PyObject * AerospikeClient_Connect(AerospikeClient * self, PyObject * args, PyOb
 	if (err.code != AEROSPIKE_OK) {
 		goto CLEANUP;
 	}
-	PyObject * py_newobject = (PyObject *)AerospikeGobalHosts_New(self->as);
-	PyDict_SetItemString(py_global_hosts, alias_to_search, py_newobject);
+
+	if (self->use_shared_connection) {
+		PyObject * py_newobject = (PyObject *)AerospikeGobalHosts_New(self->as);
+		PyDict_SetItemString(py_global_hosts, alias_to_search, py_newobject);
+	}
 	PyMem_Free(alias_to_search);
 	alias_to_search = NULL;
 
