@@ -10,4 +10,5 @@ PWD=`pwd`
 echo "Running test cases from ${PWD},"
 
 # Run test suite
+pip freeze
 python -m pytest new_tests/
