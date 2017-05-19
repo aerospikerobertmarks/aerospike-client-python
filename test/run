@@ -11,4 +11,4 @@ echo "Running test cases from ${PWD},"
 
 # Run test suite
 pip freeze
-python -m pytest -sv new_tests/
+python -m pytest new_tests/
