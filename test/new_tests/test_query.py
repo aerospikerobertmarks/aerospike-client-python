@@ -542,42 +542,42 @@ class TestQuery(TestBaseClass):
         query.foreach(callback)
         assert len(records) == 4
 
-    @pytest.mark.skip(reason="This segfaults")
-    def test_between_predicate_between_one_arg(self):
-        """
-            Invoke query and using predicate between with invalid predicate
-            arguments
-        """
-        query = self.as_connection.query('test', 'demo')
-        query.select('name', 'test_age')
-        query.where('test_age', 'between', 1)
+    # @pytest.mark.skip(reason="This segfaults")
+    # def test_between_predicate_between_one_arg(self):
+    #     """
+    #         Invoke query and using predicate between with invalid predicate
+    #         arguments
+    #     """
+    #     query = self.as_connection.query('test', 'demo')
+    #     query.select('name', 'test_age')
+    #     query.where('test_age', 'between', 1)
 
-        records = []
+    #     records = []
 
-        def callback(input_tuple):
-            _, _, record = input_tuple
-            records.append(record)
+    #     def callback(input_tuple):
+    #         _, _, record = input_tuple
+    #         records.append(record)
 
-        query.foreach(callback)
-        assert len(records) == 4
+    #     query.foreach(callback)
+    #     assert len(records) == 4
 
-    @pytest.mark.skip(reason="This segfaults")
-    def test_between_predicate_between_no_args(self):
-        """
-            Invoke query and using predicate between with invalid predicate
-            arguments
-        """
-        query = self.as_connection.query('test', 'demo')
-        query.select('name', 'test_age')
-        query.where('test_age', 'between')
+    # @pytest.mark.skip(reason="This segfaults")
+    # def test_between_predicate_between_no_args(self):
+    #     """
+    #         Invoke query and using predicate between with invalid predicate
+    #         arguments
+    #     """
+    #     query = self.as_connection.query('test', 'demo')
+    #     query.select('name', 'test_age')
+    #     query.where('test_age', 'between')
 
-        records = []
+    #     records = []
 
-        def callback(input_tuple):
-            _, _, record = input_tuple
-            records.append(record)
+    #     def callback(input_tuple):
+    #         _, _, record = input_tuple
+    #         records.append(record)
 
-        query.foreach(callback)
+    #     query.foreach(callback)
         assert len(records) == 4
 
     def test_query_with_policy_notuple(self):
