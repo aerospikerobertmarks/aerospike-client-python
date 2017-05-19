@@ -578,7 +578,7 @@ class TestQuery(TestBaseClass):
     #         records.append(record)
 
     #     query.foreach(callback)
-        assert len(records) == 4
+        # assert len(records) == 4
 
     def test_query_with_policy_notuple(self):
         """
