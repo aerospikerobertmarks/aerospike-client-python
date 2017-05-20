@@ -50,6 +50,7 @@ class TestBaseClass(object):
         import aerospike
         hostlist, user, password = TestBaseClass.get_hosts()
         config = {'hosts': hostlist}
+        print(config)
         if user is None and password is None:
             client = aerospike.client(config).connect()
         else:
