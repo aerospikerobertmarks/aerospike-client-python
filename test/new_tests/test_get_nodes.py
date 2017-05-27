@@ -11,7 +11,9 @@ except:
     print("Please install aerospike python client.")
     sys.exit(1)
 
+
 @pytest.mark.xfail(TestBaseClass.tls_in_use(), reason="get_nodes may fail when using TLS")
+@pytest.mark.xfail(TestBaseClass.temporary_xfail(), reason="xfail variable set")
 @pytest.mark.usefixtures("as_connection")
 class TestGetNodes(object):
     """
