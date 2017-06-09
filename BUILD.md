@@ -70,14 +70,11 @@ If you see the error `error: need permission to copy the Lua system files to /us
 
 You may need to either run the command with sudo, or alternatively specify a different location for the Lua system modules to be installed:
 
-	python setup.py build --force --lua-system-path=/path/to/install
-
-You may need to either run the command with sudo, or alternatively specify a different location for the Lua system modules to be installed:
-	python setup.py build --force --lua-system-path=/path/to/install
+	python setup.py build --force --lua-system-path=/path/to/lua
 
 ### Troubleshooting OS X builds
-	Building on OS X versions >= 10.11 , may cause a few additional errors to be generated. If the build command fails with an
-	error similar to: `error: could not create '/usr/local/aerospike/lua': Permission denied` there are a couple of options:
+Building on OS X versions >= 10.11 , may cause a few additional errors to be generated. If the build command fails with an
+error similar to: `error: could not create '/usr/local/aerospike/lua': Permission denied` there are a couple of options:
 	
 - Rerun the build command with the additional command line flags `--user --prefix=` . This will cause the library to only be installed for the current user, and store the library's data files in a user specific location.
 - rerun the command with sudo.
@@ -117,7 +114,7 @@ If you see the error `error: need permission to copy the Lua system files to /us
 
 You may need to either run the command with sudo, or alternatively specify a different location for the Lua system modules to be installed:
 
-	python setup.py install --force --lua-system-path=/path/to/install
+	python setup.py install --force --lua-system-path=/path/to/lua
 
 ### Lua System Modules
 
