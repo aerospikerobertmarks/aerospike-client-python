@@ -15,14 +15,6 @@
 # limitations under the License.
 ################################################################################
 
-
-################################################################################
-#
-# This script is used by bindings.gyp, to detect if libaerospike.a is
-# installed and exporting the proper environment variables.
-#
-################################################################################
-
 CWD=$(pwd)
 SCRIPT_DIR=$(dirname $0)
 BASE_DIR=$(cd "${SCRIPT_DIR}/.."; pwd)
@@ -31,13 +23,11 @@ CHECKSUMS=${BASE_DIR}/aerospike-client-c.sha256
 AEROSPIKE=${CWD}/aerospike-client-c
 LIB_PATH=${PREFIX}
 
-DOWNLOAD=${DOWNLOAD:=0}
+DOWNLOAD=${DOWNLOAD_C_CLIENT:-1}
 COPY_FILES=1
 DOWNLOAD_DIR=${AEROSPIKE}/package
-
+AEROSPIKE_C_VERSION=${AEROSPIKE_C_VERSION:-'latest'}
 unset PKG_TYPE PKG_VERSION PKG_SUFFIX PKG_ARTIFACT
-
-source ${INIFILE}
 
 
 ################################################################################
@@ -48,32 +38,6 @@ source ${INIFILE}
 
 has_cmd() {
   hash "$1" 2> /dev/null
-}
-
-verify_checksum() {
-  artifact=$1
-  dir=$2
-  checksums=$3
-  binary=${dir}/${artifact}
-  expected=$(grep ${artifact} ${checksums} | cut -d" " -f1)
-
-  if has_cmd sha256sum; then
-    actual=$(sha256sum $binary | cut -d" " -f1)
-  elif has_cmd openssl; then
-    actual=$(openssl dgst -sha256 $binary | cut -d" " -f2)
-  else
-    echo "error: Not able to verify download. Either 'sha256sum' or 'openssl' are required."
-    exit 1
-  fi
-
-  if [ $actual = $expected ]; then
-    printf "info: verifying checksum for '%s': OK\n" "${artifact}"
-  else
-    printf "error: invalid checksum for '%s'\n" "${artifact}"
-    exit 1
-  fi
-
-  return 0
 }
 
 download() {
@@ -237,7 +201,6 @@ if [ $DOWNLOAD ] && [ $DOWNLOAD == 1 ]; then
       printf "warning: the package file.\n"
     else
       download ${PKG_ARTIFACT} ${AEROSPIKE_C_VERSION} ${DOWNLOAD_DIR}
-      #verify_checksum ${PKG_ARTIFACT} ${DOWNLOAD_DIR} ${CHECKSUMS}
     fi
 
     ##############################################################################

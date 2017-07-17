@@ -225,22 +225,31 @@ if not lua_system_path:
     lua_system_path = '/usr/local/aerospike/lua'
 
 # If the C client is packaged elsewhere, assume the libraries are available
+lua_src_path = "modules/aerospike-lua-core/src"
+
 if os.environ.get('NO_RESOLVE_C_CLIENT_DEP', None):
     has_c_client = True
     libraries = libraries + ['aerospike']
-    lua_src_path = os.environ.get('AEROSPIKE_LUA_PATH', lua_system_path)
+    lua_src_path = os.environ.get('AEROSPIKE_LUA_PATH', lua_src_path)
 else:
     has_c_client = False
-    lua_src_path = "modules/aerospike-lua-core/src"
+
+lua_files = [
+                lua_src_path + '/aerospike.lua',
+                lua_src_path + '/as.lua',
+                lua_src_path + '/stream_ops.lua'
+            ]
+
+for file in lua_files:
+    if not os.path.isfile(file):
+        print("Warning: lua file {} not found, exiting".format(file), file=sys.stderr)
+        sys.exit(4)
+
 
 data_files = [
     ('aerospike', []),
     ('aerospike/usr-lua', []),
-    ('aerospike/lua', [
-            lua_src_path + '/aerospike.lua',
-            lua_src_path + '/as.lua',
-            lua_src_path + '/stream_ops.lua'
-        ])
+    ('aerospike/lua', lua_files)
 ]
 
 if not has_c_client:
