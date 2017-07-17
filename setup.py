@@ -72,7 +72,7 @@ os.putenv('ARCHFLAGS', '-arch x86_64')
 os.environ['ARCHFLAGS'] = '-arch x86_64'
 AEROSPIKE_C_VERSION = os.getenv('AEROSPIKE_C_VERSION')
 if not AEROSPIKE_C_VERSION:
-    AEROSPIKE_C_VERSION = '4.1.6'
+    AEROSPIKE_C_VERSION = '4.1.8'
 DOWNLOAD_C_CLIENT = os.getenv('DOWNLOAD_C_CLIENT')
 AEROSPIKE_C_HOME = os.getenv('AEROSPIKE_C_HOME')
 PREFIX = None
@@ -157,27 +157,6 @@ def resolve_c_client(lua_src_path, lua_system_path):
     os.putenv('DYLD_LIBRARY_PATH', ':'.join(library_dirs))
     os.environ['DYLD_LIBRARY_PATH'] = ':'.join(library_dirs)
 
-    # ---------------------------------------------------------------------------
-    # Deploying the system lua files
-    # ---------------------------------------------------------------------------
-    print("copying from", lua_src_path, "to", lua_system_path)
-    if not os.path.isdir(lua_system_path):
-        try:
-            copytree(lua_src_path, lua_system_path)
-        except OSError as e:
-            lua_syspath_error(lua_system_path, 5)
-    else:
-        for fname in os.listdir(lua_src_path):
-            try:
-                copytree(os.path.join(lua_src_path, fname), lua_system_path)
-            except OSError as e:
-                if e.errno == errno.ENOTDIR:
-                    try:
-                        copy2(os.path.join(lua_src_path, fname), lua_system_path)
-                    except:
-                        lua_syspath_error(lua_system_path, 6)
-                else:
-                    lua_syspath_error(lua_system_path, 7)
 
 ################################################################################
 # GENERIC BUILD SETTINGS
@@ -252,7 +231,7 @@ if os.environ.get('NO_RESOLVE_C_CLIENT_DEP', None):
     lua_src_path = os.environ.get('AEROSPIKE_LUA_PATH', lua_system_path)
 else:
     has_c_client = False
-    lua_src_path = "aerospike-client-c/lua"
+    lua_src_path = "modules/aerospike-lua-core/src"
 
 data_files = [
     ('aerospike', []),
@@ -317,11 +296,6 @@ setup(
 
     # Data files
     data_files=data_files,
-    eager_resources=[
-        lua_src_path + '/aerospike.lua',
-        lua_src_path + '/as.lua',
-        lua_src_path + '/stream_ops.lua',
-    ],
     ext_modules=[
         Extension(
             # Extension Name
