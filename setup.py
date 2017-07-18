@@ -157,6 +157,29 @@ def resolve_c_client(lua_src_path, lua_system_path):
     os.putenv('DYLD_LIBRARY_PATH', ':'.join(library_dirs))
     os.environ['DYLD_LIBRARY_PATH'] = ':'.join(library_dirs)
 
+    # ---------------------------------------------------------------------------
+    # Deploying the system lua files
+    # ---------------------------------------------------------------------------
+
+    if lua_system_path:
+        print("copying from", lua_src_path, "to", lua_system_path)
+        if not os.path.isdir(lua_system_path):
+            try:
+                copytree(lua_src_path, lua_system_path)
+            except OSError as e:
+                lua_syspath_error(lua_system_path, 5)
+        else:
+            for fname in os.listdir(lua_src_path):
+                try:
+                    copytree(os.path.join(lua_src_path, fname), lua_system_path)
+                except OSError as e:
+                    if e.errno == errno.ENOTDIR:
+                        try:
+                            copy2(os.path.join(lua_src_path, fname), lua_system_path)
+                        except:
+                            lua_syspath_error(lua_system_path, 6)
+                    else:
+                        lua_syspath_error(lua_system_path, 7)
 
 ################################################################################
 # GENERIC BUILD SETTINGS
@@ -221,8 +244,6 @@ for arg in sys.argv:
     if arg[0:17] == '--lua-system-path':
         option, val = arg.split('=')
         lua_system_path = val.strip()
-if not lua_system_path:
-    lua_system_path = '/usr/local/aerospike/lua'
 
 # If the C client is packaged elsewhere, assume the libraries are available
 lua_src_path = "modules/aerospike-lua-core/src"
