@@ -56,10 +56,21 @@ The dependencies can be installed through the OS X package manager [Homebrew](ht
 
 
 ## Build
-
-To build the library:
-
+After cloning the repository, To build the library:
+    git submodule update --init
     python setup.py build --force
+
+In order for client side aggregation to work, the Python client needs to store some .lua files.
+These files are included as a submodule of the Python client repository.
+By default pip will install the .lua files in a directory named ``aerospike`` inside of the Python
+installations directory for platform specific files. This directory can be seen by running
+``python -c "import sys; print(sys.exec_prefix);"``
+
+If you would like the files to be placed into an additional location during installation, specify
+a ``--lua-system-path`` option when running setup.py:
+
+``python setup.py install --lua-system-path=/path/to/lua/install``
+
 
 The helper `scripts/aerospike-client-c.sh` is triggered by `setup.py` to
 download the appropriate C client. However, if one is present this will not
